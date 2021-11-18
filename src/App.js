@@ -8,6 +8,7 @@ import "@fontsource/roboto";
 import Hero from "./layout/hero/Hero";
 import MapSection from "./layout/sections/section1/MapSection";
 import FormSection from "./layout/sections/section2/FormSection";
+import ListingInfo from "./layout/sections/section3/ListingInfo";
 
 export const ThemeContext = React.createContext({
   colors: {
@@ -32,6 +33,7 @@ function App() {
       <Hero />
       <MapSection />
       <FormSection />
+      <ListingInfo />
     </ThemeContext.Provider>
   );
 }

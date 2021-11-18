@@ -1,15 +1,15 @@
-import React, { useContext } from "react";
-import PropTypes from "prop-types";
+import React, { useContext, useState } from "react";
 import styled from "styled-components";
 import { ThemeContext } from "../../../App";
-import { useState } from "react/cjs/react.production.min";
-
+import { darken } from "polished";
 const Section = styled.section`
   display: flex;
   width: 100%;
   justify-content: center;
   background: ${(props) => props.color};
-  padding: 8rem 0;
+  padding: 4rem 0;
+  max-height: 70vh;
+  overflow-y: visible;
 `;
 
 const Inner = styled.div`
@@ -21,7 +21,6 @@ const Inner = styled.div`
 const Column = styled.div`
   display: flex;
   flex-direction: column;
-
   & h2 {
     line-height: 2;
     font-family: Roboto, sans-serif;
@@ -36,17 +35,106 @@ const FormContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  border-radius: 5px;
 `;
 const FormInner = styled.div`
-  width: 80%;
+  width: 75%;
   display: flex;
   flex-direction: column;
 `;
-const FormContainerHeading = styled.div``;
-const Form = styled.form``;
-const InputContainer = styled.div``;
-const Label = styled.label``;
-const Input = styled.input``;
+const FormContainerHeading = styled.div`
+  margin-top: 1rem;
+  line-height: 1.6;
+  font-weight: 700;
+`;
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+`;
+const InputContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0.6rem 0;
+  position: relative;
+  padding: 0.3rem;
+  &:nth-of-type(odd) {
+    &::before {
+      content: "";
+      display: block;
+      background: #fff;
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      clip-path: polygon(0 0, 100% 0, 97% 100%, 3% 100%);
+    }
+  }
+  &:nth-of-type(even) {
+    &::before {
+      content: "";
+      display: block;
+      background: #fff;
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      clip-path: polygon(3% 0, 97% 0, 100% 100%, 0 100%);
+    }
+  }
+`;
+const Label = styled.label`
+  position: relative;
+  z-index: 1;
+  font-weight: 700;
+  color: #222;
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
+  width: 80%;
+`;
+const Input = styled.input`
+  position: relative;
+  z-index: 1;
+  border: 0;
+  text-indent: 5px;
+  border-bottom: 2px solid #eee;
+  margin-top: 0.5rem;
+  margin-left: 0.5rem;
+  font-size: 12px;
+  transition: all 0.3s ease-in-out;
+  width: 80%;
+  &::placeholder {
+    font-style: italic;
+    color: #ddd;
+  }
+  &:hover,
+  &:active,
+  &:focus {
+    outline: 0px solid transparent;
+    border-color: ${(props) => props.color};
+  }
+`;
+
+const FormButton = styled.button`
+  margin-top: 1rem;
+  padding: 1rem;
+  color: #fff;
+  background: ${(props) => props.color};
+  font-weight: 700;
+  border: 4px solid ${(props) => darken(0.1, props.color)};
+  border-radius: 120px;
+  align-self: flex-end;
+  transition: all 0.3s ease-in-out;
+  max-width: 500px;
+  &:hover {
+    cursor: pointer;
+    background: ${(props) => darken(0.1, props.color)};
+  }
+`;
 
 const FormSection = (props) => {
   const context = useContext(ThemeContext);
@@ -54,17 +142,10 @@ const FormSection = (props) => {
     <Section color={context.colors.main}>
       <Inner>
         <Column>
-          <h2>
-            Luckily for you,
-            <br />
-            map listings are <br />
-            now open to all
-            <br />
-            businesses.
-          </h2>
+          <h2>Luckily for you, map listings are now open to all businesses.</h2>
         </Column>
         <Column>
-          <FormComponent />
+          <FormComponent context={context} />
         </Column>
       </Inner>
     </Section>
@@ -73,7 +154,7 @@ const FormSection = (props) => {
 
 FormSection.propTypes = {};
 
-const FormComponent = ({}) => {
+const FormComponent = ({ context }) => {
   const [formData, setData] = useState({
     businessName: "",
     name: "",
@@ -146,6 +227,7 @@ const FormComponent = ({}) => {
       name: "businessEmail",
     },
   ];
+  console.log(context);
   return (
     <FormContainer>
       <FormInner>
@@ -164,10 +246,14 @@ const FormComponent = ({}) => {
                   value={inputData.value}
                   placeholder={inputData.label}
                   name={inputData.name}
+                  color={context.colors.main}
                 />
               </InputContainer>
             );
           })}
+          <FormButton color={context.colors.main}>
+            Pre-Register Me For Ad Mapping Map Listings
+          </FormButton>
         </Form>
       </FormInner>
     </FormContainer>
