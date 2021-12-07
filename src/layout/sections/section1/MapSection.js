@@ -1,5 +1,4 @@
 import React, { useContext } from "react";
-import PropTypes from "prop-types";
 import styled from "styled-components";
 import { ThemeContext } from "../../../App";
 
@@ -15,8 +14,12 @@ const Inner = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: center;
-  width: 85%;
+  width: 75%;
   gap: 2rem;
+  @media screen and (max-width: 760px) {
+    display: flex;
+    flex-wrap: wrap;
+  }
 `;
 const Column = styled.div`
   display: flex;
@@ -33,17 +36,30 @@ const Column = styled.div`
     font-size: 1.3rem;
     color: ${(props) => props.color};
   }
+  @media screen and (max-width: 760px) {
+    align-items: center;
+    & img {
+      max-width: 90%;
+    }
+    & p {
+      font-size: 1rem;
+    }
+  }
 `;
 
 const MapSection = () => {
   const context = useContext(ThemeContext);
+  const { state } = context;
   return (
     <Section>
       <Inner>
         <Column>
-          <img src="https://ik.imagekit.io/usam13ogl7u/map-with-purp_V6C35w2wP8.png?updatedAt=1635529286340" />
+          <img
+            src="https://ik.imagekit.io/usam13ogl7u/map-with-purp_V6C35w2wP8.png?updatedAt=1635529286340"
+            alt="map"
+          />
         </Column>
-        <Column color={context.colors.dark}>
+        <Column color={state.colors.dark}>
           <p>
             Ever notice those little notations showing a McDonalds nearby, or
             that gas station up the road?

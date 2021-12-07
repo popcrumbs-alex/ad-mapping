@@ -1,41 +1,97 @@
-import React, { useContext, useState } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
 import styled from "styled-components";
 import { ThemeContext } from "../../../App";
-import { darken } from "polished";
+import { darken, lighten } from "polished";
+import ReCAPTCHA from "react-google-recaptcha-enterprise";
+import { useMutation } from "@apollo/client";
+import { SEND_EMAIL } from "../../../mutations/SendEmail";
+
 const Section = styled.section`
   display: flex;
+  flex-direction: column;
+  align-items: center;
   width: 100%;
-  justify-content: center;
-  background: ${(props) => props.color};
   padding: 4rem 0;
-  max-height: 70vh;
   overflow-y: visible;
+  position: relative;
+  &::before {
+    content: "";
+    background: ${(props) => props.color};
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 80vh;
+    width: 100%;
+    display: block;
+    z-index: 0;
+  }
+  @media screen and (max-width: 760px) {
+    background: ${(props) => props.color};
+    &::before {
+      display: none;
+    }
+  }
 `;
 
 const Inner = styled.div`
-  width: 85%;
+  width: 75%;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-items: center;
+  position: relative;
+  z-index: 2;
+  @media screen and (max-width: 760px) {
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+  }
 `;
 const Column = styled.div`
   display: flex;
   flex-direction: column;
   & h2 {
-    line-height: 2;
+    line-height: 1.5;
     font-family: Roboto, sans-serif;
     max-width: 500px;
     font-weight: 800;
-    font-size: 2.5rem;
+    font-size: 3.7rem;
     color: #fff;
+  }
+  @media screen and (max-width: 760px) {
+    & h2 {
+      font-size: 2rem;
+    }
+  }
+`;
+
+const Decoration = styled.div`
+  background-color: #03cea4;
+  height: 10px;
+  width: 361px;
+  display: block;
+  margin: 1rem 0;
+  border-radius: 10px;
+  border: 0;
+  @media screen and (max-width: 760px) {
+    height: 5px;
+    width: 90%;
   }
 `;
 const FormContainer = styled.div`
-  background: #eee;
+  // background: #ffd07b;
+  background: #eef;
   display: flex;
   flex-direction: column;
   align-items: center;
   border-radius: 5px;
+  @media screen and (max-width: 760px) {
+    margin-top: 2rem;
+  }
 `;
 const FormInner = styled.div`
   width: 75%;
@@ -44,8 +100,14 @@ const FormInner = styled.div`
 `;
 const FormContainerHeading = styled.div`
   margin-top: 1rem;
-  line-height: 1.6;
-  font-weight: 700;
+  margin-bottom: 0.4rem;
+  & p {
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 400;
+    color: ${(props) => props.color};
+    // color: #fff;
+  }
 `;
 const Form = styled.form`
   display: flex;
@@ -55,9 +117,9 @@ const InputContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0.6rem 0;
+  margin: 0.3rem 0;
   position: relative;
-  padding: 0.3rem;
+  padding: 0.5rem;
   &:nth-of-type(odd) {
     &::before {
       content: "";
@@ -92,7 +154,7 @@ const Label = styled.label`
   z-index: 1;
   font-weight: 700;
   color: #222;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   margin-left: 0.5rem;
   width: 80%;
 `;
@@ -130,31 +192,61 @@ const FormButton = styled.button`
   align-self: flex-end;
   transition: all 0.3s ease-in-out;
   max-width: 500px;
+  margin-bottom: 2rem;
   &:hover {
     cursor: pointer;
     background: ${(props) => darken(0.1, props.color)};
   }
 `;
 
-const FormSection = (props) => {
+const CaptchaContainer = styled.div`
+  margin: 2rem 0;
+  display: flex;
+  width: 100%;
+`;
+
+const Alert = styled.div`
+  border-radius: 5px;
+  background-color: ${(props) => lighten(0.2, props.color)};
+  border: 2px solid ${(props) => props.color};
+  color: #fff;
+  width: 100%;
+  display: flex;
+  padding: 0rem 1rem;
+  margin: 0.5rem 0;
+  & p {
+    color: #fff;
+  }
+`;
+
+const FormSection = () => {
   const context = useContext(ThemeContext);
+  const formRef = useRef(null);
+  const { state, dispatch } = context;
+
+  useEffect(() => {
+    if (formRef) {
+      dispatch({ type: "ADD_FORM_REF", payload: formRef });
+    }
+  }, [formRef, dispatch]);
+
   return (
-    <Section color={context.colors.main}>
-      <Inner>
+    <Section color={state.colors.main}>
+      <Inner ref={formRef}>
         <Column>
           <h2>Luckily for you, map listings are now open to all businesses.</h2>
+          <Decoration />
         </Column>
         <Column>
-          <FormComponent context={context} />
+          <FormComponent context={state} />
         </Column>
       </Inner>
     </Section>
   );
 };
 
-FormSection.propTypes = {};
-
 const FormComponent = ({ context }) => {
+  const token = "6Lc7IVMdAAAAAL0mijXMMD9lb398-0qb-Nmck8Bj";
   const [formData, setData] = useState({
     businessName: "",
     name: "",
@@ -163,12 +255,20 @@ const FormComponent = ({ context }) => {
     businessPhone: "",
     businessAddress: "",
     businessCity: "",
-    state: "",
+    businessState: "",
     businessEmail: "",
   });
 
+  //captcha stuff
+  const [capVis, setVis] = useState(false);
+  const [captcha, setCaptcha] = useState(null);
+  const captchaChange = (val) => setCaptcha(() => val);
+
+  //form
   const changeEvent = (event) =>
     setData({ ...formData, [event.target.name]: event.target.value });
+  const [loading, setLoading] = useState(false);
+
   const {
     businessName,
     name,
@@ -178,7 +278,7 @@ const FormComponent = ({ context }) => {
     businessPhone,
     businessEmail,
     businessCity,
-    state,
+    businessState,
   } = formData;
   const DATA = [
     {
@@ -218,8 +318,8 @@ const FormComponent = ({ context }) => {
     },
     {
       label: "Business State",
-      value: state,
-      name: "state",
+      value: businessState,
+      name: "businessState",
     },
     {
       label: "Business Email",
@@ -227,33 +327,89 @@ const FormComponent = ({ context }) => {
       name: "businessEmail",
     },
   ];
-  console.log(context);
+
+  const [sendEmail, { error, loading: mutationLoading, data }] =
+    useMutation(SEND_EMAIL);
+
+  const openCaptcha = (e) => {
+    e.preventDefault();
+    setVis(true);
+  };
+
+  const handleSubmit = useCallback(async () => {
+    setLoading(true);
+    setVis(false);
+    try {
+      setLoading(false);
+
+      await sendEmail({ variables: { input: { ...formData } } });
+    } catch (error) {
+      console.error("error in mutation", error);
+      setLoading(false);
+      return error;
+    }
+  }, [formData, sendEmail]);
+
+  useEffect(() => {
+    if (captcha !== null) {
+      handleSubmit();
+    }
+  }, [captcha, handleSubmit]);
+
+  useEffect(() => {
+    if (data && !error) {
+      setLoading(false);
+    }
+  }, [data, error]);
+  console.log("is this an error", error);
+
   return (
     <FormContainer>
       <FormInner>
-        <FormContainerHeading>
+        <FormContainerHeading color={context.colors.dark}>
           <p>
             The wait is almost over, if you want your business included in this
             service please complete your business information below
           </p>
         </FormContainerHeading>
         <Form>
-          {DATA.map((inputData, i) => {
+          {DATA.map((inputData, index) => {
             return (
-              <InputContainer key={i}>
+              <InputContainer key={index * 36}>
                 <Label>{inputData.label}</Label>
                 <Input
                   value={inputData.value}
                   placeholder={inputData.label}
                   name={inputData.name}
                   color={context.colors.main}
+                  onChange={changeEvent}
                 />
               </InputContainer>
             );
           })}
-          <FormButton color={context.colors.main}>
-            Pre-Register Me For Ad Mapping Map Listings
-          </FormButton>
+          {data && (
+            <Alert color={context.colors.accent}>
+              <p>Request Has Been Sent!</p>
+            </Alert>
+          )}
+          {error && (
+            <Alert color={context.colors.danger}>
+              <p>{error.message}</p>
+            </Alert>
+          )}
+          {!loading && !mutationLoading ? (
+            capVis ? (
+              <CaptchaContainer>
+                <ReCAPTCHA sitekey={token} onChange={captchaChange} />
+              </CaptchaContainer>
+            ) : (
+              <FormButton color={context.colors.main} onClick={openCaptcha}>
+                Pre-Register Me For Ad Mapping Map Listings
+              </FormButton>
+            )
+          ) : (
+            <p>Submitting form, please wait...</p>
+          )}
         </Form>
       </FormInner>
     </FormContainer>
